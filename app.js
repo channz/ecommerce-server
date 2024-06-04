@@ -10,13 +10,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-const userRoutes = require("./routes/userRoutes");
-const productRoutes = require("./routes/productRoutes");
-const transactionRoutes = require("./routes/transactionRoutes");
+const indexRoutes = require("./routes");
 
-app.use("/users", userRoutes);
-app.use("/products", productRoutes);
-app.use("/transaction", transactionRoutes);
+app.use("/", indexRoutes);
 
 app.listen(port, async () => {
   console.log(`Server ready on port ${port}`);

@@ -1,21 +1,45 @@
 const jwt = require("jsonwebtoken");
-const { User } = require("../models");
 
-const authentication = async (req, res, next) => {
-  const token = req.header("Authorization").replace("Bearer ", "");
+function generateJWT(user) {
+  const payload = {
+    id: user.id,
+    role: user.role,
+  };
+
+  return jwt.sign(payload, process.env, JWT_SECRET, { expiresIn: "1h" });
+}
+
+const auth = (req, res, next) => {
   try {
-    const decoded = jwt.verify(token, "jwt_secret");
-    const user = await User.findOne({ where: { id: decoded.id } });
+    const authorizedRoles = {
+      "/api/products": ["SELLER"],
+      "/api/orders": ["BUYER", "SELLER"],
+    };
 
-    if (!user) {
-      throw new Error();
+    const currentPath = req.originalUrl;
+
+    if (authorizedRoles[currentPath]) {
+      if (authorizedRoles[currentPath].includes(req.user.role)) {
+        req.user = user;
+        next();
+      } else {
+        return res.status(403).send({
+          status: false,
+          message: "Forbidden: Access denied for this role",
+        });
+      }
+    } else {
+      next();
     }
-
-    req.user = user;
-    next();
-  } catch (e) {
-    res.status(401).send({ error: "Please authenticate." });
+  } catch (error) {
+    res.status(401).send({
+      status: false,
+      message: "access unauthorized",
+    });
   }
 };
 
-module.exports = authentication;
+module.exports = {
+  generateJWT,
+  auth,
+};
